@@ -37,18 +37,26 @@ homeRouter.get('/:city', async (req, res) => {
 
         const rawData = await response.json()
         const openMeteoResponse = await fetch(openMeteoApi)
-        const uvIndex = openMeteoResponse.current['uv_index']
-        res.send(uvIndex)
-        // const rainChance = openMeteoResponse['precipitation_probability'][hourly.time.indexOf(openMeteoResponse.current.time)]
-        // rawData.uvIndex = uvIndex
-        // rawData.rainChance = rainChance
-        // let cleanedData = new HomeData(rawData)
-        // cleanedData = cleanedData.show()
 
-        // res.json(cleanedData)
+        if (!openMeteoResponse.ok) {
+            res.status(500).send('Error: Failed to fetch data')
+            return
+        }
+        
+        const openMeteoData = await openMeteoResponse.json()
+        const uvIndex = openMeteoData.current['uv_index']
+        let currentTime = openMeteoData.current.time
+        let chanceIndex = openMeteoData.hourly.time.indexOf(currentTime)
+        const rainChance = openMeteoData.hourly['precipitation_probability'][chanceIndex]
+        rawData.uvIndex = uvIndex
+        rawData.rainChance = rainChance
+        let cleanedData = new HomeData(rawData)
+        cleanedData = cleanedData.show()
+
+        res.json(cleanedData)
 
     } catch(error) {
-        res.status(500).send('Error: Failed to convert to geocode. Please try again later')
+        res.status(500).send('An error occured. Please try again later')
     }
 })
 
